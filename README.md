@@ -1,0 +1,2 @@
+# storage
+storage in go
