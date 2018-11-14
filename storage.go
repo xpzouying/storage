@@ -10,7 +10,7 @@ type Storage interface {
 	// Open(ctx context.Context, path string) (io.ReadCloser, error)
 
 	// Put data and return uri for object
-	Put(ctx context.Context, r io.Reader) (uri string, err error)
+	Put(ctx context.Context, url string, r io.Reader) error
 
 	// Get object by uri
 	Get(ctx context.Context, uri string) (rc io.ReadCloser, err error)
