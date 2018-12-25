@@ -12,7 +12,7 @@ import (
 const defFileMode os.FileMode = os.ModePerm
 
 var (
-	ErrEmptyUri = errors.New("empty uri")
+	ErrEmptyURI = errors.New("empty uri")
 )
 
 // Local is local storage in local filesystem
@@ -37,13 +37,16 @@ func NewLocal(path string) (*Local, error) {
 // Put data and return uri for object
 func (l Local) Put(ctx context.Context, uri string, r io.Reader) error {
 	if uri == "" {
-		return ErrEmptyUri
+		return ErrEmptyURI
 	}
 
 	path := l.fullpath(uri)
 
 	if _, err := os.Stat(path); os.IsExist(err) {
-		return err
+		err = os.Remove(path)
+		if err != nil {
+			return err
+		}
 	}
 
 	data, err := ioutil.ReadAll(r)
@@ -57,7 +60,7 @@ func (l Local) Put(ctx context.Context, uri string, r io.Reader) error {
 // Get object by uri
 func (l Local) Get(ctx context.Context, uri string) (rc io.ReadCloser, err error) {
 	if uri == "" {
-		return nil, ErrEmptyUri
+		return nil, ErrEmptyURI
 	}
 
 	path := l.fullpath(uri)
@@ -72,7 +75,7 @@ func (l Local) Get(ctx context.Context, uri string) (rc io.ReadCloser, err error
 // Delete object by uri
 func (l Local) Delete(ctx context.Context, uri string) error {
 	if uri == "" {
-		return ErrEmptyUri
+		return ErrEmptyURI
 	}
 
 	path := l.fullpath(uri)
