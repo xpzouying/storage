@@ -22,6 +22,11 @@ func TestLocal(t *testing.T) {
 			uri:  "testfile1",
 			data: []byte("hello local storage"),
 		},
+		{
+			name: "multiple directory",
+			uri:  "test_dir/testfile2",
+			data: []byte("this is test file2"),
+		},
 	}
 
 	for _, tc := range ts {
@@ -43,7 +48,31 @@ func TestLocal(t *testing.T) {
 			assert.NoError(t, err)
 			rc.Close()
 			assert.Equal(t, tc.data, got)
+		})
+	}
+}
 
+func TestPutErrorURI(t *testing.T) {
+	dir := filepath.Join(os.TempDir(), "local-test")
+	l, err := NewLocal(dir)
+	assert.NoError(t, err)
+	defer func() {
+		os.RemoveAll(dir)
+	}()
+
+	ts := []struct {
+		name string
+		uri  string
+	}{
+		{name: "begin_with_backlash", uri: "/test_dir"},
+		{name: "end_with_backlash", uri: "test_dir/"},
+		{name: "empty_uri", uri: ""},
+	}
+
+	for _, tc := range ts {
+		t.Run(tc.name, func(t *testing.T) {
+			err = l.Put(context.Background(), tc.uri, bytes.NewBuffer([]byte("only dir")))
+			assert.Error(t, err)
 		})
 	}
 }

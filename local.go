@@ -3,10 +3,12 @@ package storage
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const defFileMode os.FileMode = os.ModePerm
@@ -35,12 +37,20 @@ func NewLocal(path string) (*Local, error) {
 }
 
 // Put data and return uri for object
+// uri could be multi-level directory, split by '/'
 func (l Local) Put(ctx context.Context, uri string, r io.Reader) error {
-	if uri == "" {
-		return ErrEmptyURI
+	if err := validURI(uri); err != nil {
+		return err
 	}
 
 	path := l.fullpath(uri)
+
+	dir := filepath.Dir(path)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			return err
+		}
+	}
 
 	if _, err := os.Stat(path); os.IsExist(err) {
 		err = os.Remove(path)
@@ -59,8 +69,8 @@ func (l Local) Put(ctx context.Context, uri string, r io.Reader) error {
 
 // Get object by uri
 func (l Local) Get(ctx context.Context, uri string) (rc io.ReadCloser, err error) {
-	if uri == "" {
-		return nil, ErrEmptyURI
+	if err := validURI(uri); err != nil {
+		return nil, err
 	}
 
 	path := l.fullpath(uri)
@@ -74,8 +84,8 @@ func (l Local) Get(ctx context.Context, uri string) (rc io.ReadCloser, err error
 
 // Delete object by uri
 func (l Local) Delete(ctx context.Context, uri string) error {
-	if uri == "" {
-		return ErrEmptyURI
+	if err := validURI(uri); err != nil {
+		return err
 	}
 
 	path := l.fullpath(uri)
@@ -94,4 +104,16 @@ func (l Local) Close() error {
 
 func (l Local) fullpath(uri string) string {
 	return filepath.Join(string(l), uri)
+}
+
+func validURI(uri string) error {
+	if uri == "" {
+		return ErrEmptyURI
+	}
+
+	if strings.HasPrefix(uri, "/") || strings.HasSuffix(uri, "/") {
+		return fmt.Errorf("uri invalid: %s", uri)
+	}
+
+	return nil
 }
