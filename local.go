@@ -94,7 +94,7 @@ func (l Local) Delete(ctx context.Context, uri string) error {
 		return nil
 	}
 
-	return os.Remove(path)
+	return os.RemoveAll(path)
 }
 
 // Close storage

@@ -102,3 +102,30 @@ func TestDeleteNotExistsFile(t *testing.T) {
 	err = l.Delete(context.Background(), "test-not-exists.txt")
 	assert.NoError(t, err)
 }
+
+func TestDeleteDir(t *testing.T) {
+	dir := filepath.Join(os.TempDir(), "local-test")
+	l, err := NewLocal(dir)
+	assert.NoError(t, err)
+	defer func() {
+		os.RemoveAll(dir)
+	}()
+
+	// add test file
+	dirName := "test-dir"
+	dirFullPath := filepath.Join(dir, dirName)
+	err = os.Mkdir(dirFullPath, os.ModePerm)
+	assert.NoError(t, err)
+	testFilePath := filepath.Join(dirFullPath, "test1")
+	_, err = os.OpenFile(testFilePath, os.O_CREATE|os.O_RDONLY, os.ModePerm)
+	assert.NoError(t, err)
+
+	err = l.Delete(context.Background(), dirName)
+	assert.NoError(t, err)
+
+	if _, err = os.Stat(dirFullPath); err != nil {
+		if os.IsExist(err) {
+			t.Errorf("dir should be delete: %s", dirFullPath)
+		}
+	}
+}
